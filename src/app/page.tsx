@@ -117,7 +117,34 @@ export default function Home() {
     }
   }
 
-
+  useEffect(() => {
+    if (timeLeft < 1) {
+      setFeedback("Incorrect");
+      if (currentQuestion >= 9) {
+        setScore(prev => {
+          setAttempts(prevArr => [...prevArr, prev])
+          return prev
+        })
+        setTimeout(() => {
+          setContent("result");
+        }, 1000)
+        return () => clearInterval(timer);
+      }
+      setTimeout(() => {
+        setFeedback("");
+        setCurrentQuestion((prev) => prev + 1);
+        setSelectedAnswer("");
+        setTimeLeft(30);
+      }, 1000);
+    }
+  
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+  
+    return () => clearInterval(timer);
+  }, [timeLeft, currentQuestion]);
+  
 
   function handlePlay() {
     setContent("quiz");
