@@ -118,6 +118,7 @@ export default function Home() {
   }
 
   useEffect(() => {
+    if(content !== "quiz") return;
     if (timeLeft < 1) {
       setFeedback("Incorrect");
       if (currentQuestion >= 9) {
