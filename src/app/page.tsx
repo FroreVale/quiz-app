@@ -1,17 +1,23 @@
 "use client";
 
 import { Intro } from "@/components/content/Intro";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 
 type Question = {
-  question: string,
-  options?: string[],
-  answer: string,
-  type: "mcq" | "integer"
-}
+  question: string;
+  options?: string[];
+  answer: string;
+  type: "mcq" | "integer";
+};
 
 const quizQuestions: Question[] = [
   {
@@ -79,117 +85,148 @@ const quizQuestions: Question[] = [
 export default function Home() {
   const [content, setContent] = useState("intro");
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [feedback, setFeedback] = useState("")
-  const [score, setScore] = useState(0)
+  const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(30);
+  const [attempts, setAttempts] = useState<number[]>([]);
 
-  function handleAnswer(selectedAnswer : string) {
-    const correctAnswer = quizQuestions[currentQuestion].answer
-    if(selectedAnswer === correctAnswer) {
-      setScore(prev => prev + 1)
+  function handleAnswer(selectedAnswer: string) {
+    const correctAnswer = quizQuestions[currentQuestion].answer;
+    if (selectedAnswer === correctAnswer) {
+      setScore((prev) => prev + 1);
       setFeedback("Correct");
     } else {
-      setFeedback("Incorrect")
+      setFeedback("Incorrect");
     }
-    setTimeout(() => {
-      setFeedback("")
-      setCurrentQuestion(prev => prev + 1)
-      setSelectedAnswer("")
-      setTimeLeft(30)
-    }, 1000)
+    if (currentQuestion === 9) {
+      setAttempts((prev) => [
+        ...prev,
+        score + (correctAnswer === selectedAnswer ? 1 : 0),
+      ]);
+      setTimeout(() => {
+        setContent("result");
+      }, 1000);
+    } else {
+      setTimeout(() => {
+        setFeedback("");
+        setCurrentQuestion((prev) => prev + 1);
+        setSelectedAnswer("");
+        setTimeLeft(30);
+      }, 1000);
+    }
   }
 
-  useEffect(() => {
-    if (content !== "quiz") return;
-  
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev === 1) {
-          clearInterval(timer);
-          setFeedback("Time's up!");
-          setTimeout(() => {
-            setFeedback("");
-            setCurrentQuestion((prev) => prev + 1);
-            setSelectedAnswer("");
-            setTimeLeft(30);
-          }, 1000);
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  
-    return () => clearInterval(timer); // Cleanup on unmount or question change
-  }, [currentQuestion, content]);
-  
+
 
   function handlePlay() {
     setContent("quiz");
   }
 
   function handleSelected(option: string) {
-    setSelectedAnswer(option)
+    setSelectedAnswer(option);
+  }
+
+  function handleRetry() {
+    setFeedback("");
+    setCurrentQuestion(0);
+    setSelectedAnswer("");
+    setTimeLeft(30);
+    setScore(0);
+    setContent("intro");
   }
 
   return (
     <>
       <div className="flex justify-center items-center min-h-screen">
+        {/* Intro */}
         {content === "intro" && <Intro onPlay={handlePlay} />}
+
+        {/* Quiz */}
         {content === "quiz" && (
           <Card className="max-w-[600px]">
-          <CardHeader>
-            <CardTitle>Question {currentQuestion + 1}</CardTitle>
-            <p className="text-red-500">Time Left: {timeLeft}</p>
-          </CardHeader>
-          <CardContent>
-            <p className="text-center md:text-2xl ">
-              {quizQuestions[currentQuestion].question}
-            </p>
-            <div className="flex flex-col items-center gap-4 mt-4">
-              {quizQuestions[currentQuestion].type === "mcq" ? (
-                quizQuestions[currentQuestion].options?.map(
-                  (elem: string, index: number) => (
-                    <Button
-                      key={index}
-                      variant={selectedAnswer !== elem ? "secondary" : "default"}
-                      onClick={() => handleSelected(elem)}
-                      className="min-w-48"
-                    >
-                      {elem}
-                    </Button>
+            <CardHeader>
+              <CardTitle>Question {currentQuestion + 1}</CardTitle>
+              <p className="text-red-500">Time Left: {timeLeft}</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center md:text-2xl ">
+                {quizQuestions[currentQuestion].question}
+              </p>
+              <div className="flex flex-col items-center gap-4 mt-4">
+                {quizQuestions[currentQuestion].type === "mcq" ? (
+                  quizQuestions[currentQuestion].options?.map(
+                    (elem: string, index: number) => (
+                      <Button
+                        key={index}
+                        variant={
+                          selectedAnswer !== elem ? "secondary" : "default"
+                        }
+                        onClick={() => handleSelected(elem)}
+                        className="min-w-48"
+                      >
+                        {elem}
+                      </Button>
+                    )
                   )
-                )
-              ) : (
-                <Input
-                  value={selectedAnswer}
-                  onChange={(e) => handleSelected(e.target.value)}
-                />
-              )}
-            </div>
-            <div className="flex justify-center mt-4">
-              <Button
-                disabled={!selectedAnswer}
-                onClick={() => handleAnswer(selectedAnswer)}
-              >
-                Submit
-              </Button>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <div className="flex flex-col items-center w-full">
-              {feedback && (
-                <p
-                  className={`text-2xl font-bold text-center ${
-                    feedback === "Correct" ? "text-green-500" : "text-red-500"
-                  }`}
+                ) : (
+                  <Input
+                    value={selectedAnswer}
+                    onChange={(e) => handleSelected(e.target.value)}
+                  />
+                )}
+              </div>
+              <div className="flex justify-center mt-4">
+                <Button
+                  disabled={!selectedAnswer}
+                  onClick={() => handleAnswer(selectedAnswer)}
                 >
-                  {feedback}
+                  Submit
+                </Button>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <div className="flex flex-col items-center w-full">
+                {feedback && (
+                  <p
+                    className={`text-2xl font-bold text-center ${
+                      feedback === "Correct" ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {feedback}
+                  </p>
+                )}
+                <p className="self-start">{`Score is ${score}/10`}</p>
+              </div>
+            </CardFooter>
+          </Card>
+        )}
+
+        {/* Result */}
+        {content === "result" && (
+          <div className="flex flex-col gap-4">
+            <Card className="max-w-[600px]">
+              <CardHeader>
+                <CardTitle className="text-center text-3xl">
+                  Quiz Completed
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center">Your Score is {score}/10</p>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <Button onClick={handleRetry}>Retry</Button>
+              </CardFooter>
+            </Card>
+            <div>
+              {attempts.map((score, index) => (
+                <p className="text-center" key={index + 1}>
+                  {" "}
+                  Attempt {index + 1}: {score}/10
                 </p>
-              )}
-              <p className="self-start">{`Score is ${score}/10`}</p>
+              ))}
             </div>
-          </CardFooter>
-        </Card>
+          </div>
         )}
       </div>
     </>
